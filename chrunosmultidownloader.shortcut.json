@@ -1,0 +1,45 @@
+{
+  "name": "Chrunos Multi Downloader",
+  "description": "Human-readable JSON representation of an iPhone Shortcut. Use the steps below to recreate the shortcut in the Shortcuts app if direct import is not available.",
+  "version": "1.0",
+  "default_save_location": "Files/Shortcuts/Downloads",
+  "actions": [
+    {
+      "action": "Get Contents of URL",
+      "method": "GET",
+      "url": "https://raw.githubusercontent.com/CodyChrunos/Shortcuts/refs/heads/main/chrunosmultidownloader.json",
+      "headers": {"Accept": "application/json"},
+      "saveResultAs": "updateJson"
+    },
+    {
+      "action": "Get Dictionary from Input",
+      "input": "updateJson",
+      "saveResultAs": "update"
+    },
+    {
+      "action": "If",
+      "condition": "update.pVersion == 1.1",
+      "ifActions": [
+        {"action":"Ask for Input","type":"Confirm","prompt":"Send the current clipboard contents to the remote API? This may include private URLs or tokens.","saveResultAs":"confirmSend"},
+        {"action":"Get Clipboard","saveResultAs":"clipboardText"},
+        {"action":"Get Variable","variable":"confirmSend","saveResultAs":"shouldProceed"},
+        {"action":"If","condition":"shouldProceed == true","ifActions":[
+          {"action":"Get Contents of URL","method":"POST","url":"{{update.api}}","headers":{"Content-Type":"application/json"},"requestBody":"{ \"url\": \"{{clipboardText}}\", \"quality\": \"720\" }","saveResultAs":"apiResponse"},
+          {"action":"Get Dictionary from Input","input":"apiResponse","saveResultAs":"jsonResponse"},
+          {"action":"If","condition":"jsonResponse contains key 'error'","ifActions":[
+            {"action":"Open URLs","url":"https://t.me/chrunoss"}
+          ],"elseActions":[
+            {"action":"If","condition":"jsonResponse.url is not empty","ifActions":[
+              {"action":"Get Contents of URL","method":"GET","url":"{{jsonResponse.url}}","saveResultAs":"downloadedData"},
+              {"action":"Save File","input":"downloadedData","destinationPath":"Shortcuts/Downloads","askWhereToSave":false}
+            ],"elseActions":[]}
+          ]}
+        ],"elseActions":[]}
+      ],
+      "elseActions": [
+        {"action":"Open URLs","url":"{{update.url}}"}
+      ]
+    }
+  ],
+  "notes": "This file is a descriptive JSON of the shortcut. Import manually into Shortcuts by creating a new shortcut and adding the corresponding actions in order."
+}
